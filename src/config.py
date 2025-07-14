@@ -10,10 +10,12 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
-# Проверяем, что все переменные заданы
-# ИСПРАВЛЕНИЕ 1: Передаем список переменных в функцию all()
-if not all():
-    raise ValueError("Ошибка: Одна или несколько переменных окружения не заданы. Проверьте ваши GitHub Secrets (GEMINI_API_KEY, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID).")
+# Список переменных для проверки
+variables_to_check =
 
-# ИСПРАВЛЕНИЕ 2: Возвращаем правильную модель, которую вы запрашивали
+# Правильная проверка, что все переменные заданы
+if not all(variables_to_check):
+    raise ValueError("Ошибка: Одна или несколько переменных окружения не заданы. Проверьте ваши GitHub Secrets.")
+
+# Правильная модель, которую вы запрашивали
 MODEL_NAME = "gemini-2.5-pro"

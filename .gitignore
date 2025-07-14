@@ -1,12 +1,15 @@
 # Python
 __pycache__/
 *.pyc
-*.pyo
-*.pyd
-.Python
-env/
 venv/
+*.egg-info/
 
-# Secrets
+# Secrets - Never commit this file!
 .env
-*.env
+
+# IDE specific
+.idea/
+.vscode/
+
+# State file
+processed_articles.log

@@ -16,4 +16,4 @@ if not all():
     raise ValueError("Ошибка: Одна или несколько переменных окружения не заданы. Проверьте ваши GitHub Secrets (GEMINI_API_KEY, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID).")
 
 # Идентификатор модели Gemini
-MODEL_NAME = "gemini-1.5-flash-latest"
+MODEL_NAME = "gemini-2.5-pro"

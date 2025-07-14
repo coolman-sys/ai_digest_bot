@@ -9,7 +9,7 @@ TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
 # ЭТА СТРОКА ТЕПЕРЬ ПОЛНОСТЬЮ ИСПРАВЛЕНА.
 # Мы создаем список из реальных переменных для проверки.
-variables_to_check =
+variables_to_check = [GEMINI_API_KEY,TELEGRAM_BOT_TOKEN,TELEGRAM_CHAT_ID]
 
 if not all(variables_to_check):
     raise ValueError("Ошибка: Одна или несколько переменных окружения не заданы. Проверьте ваши GitHub Secrets.")

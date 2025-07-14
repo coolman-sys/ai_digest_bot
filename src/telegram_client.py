@@ -1,71 +1,72 @@
 import logging
 import telegram
-from src.config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
+from src.config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, TELEGRAM_ADMIN_CHAT_ID
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+# Set up basic logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
-# Лимит Telegram на длину сообщения. Устанавливаем с запасом.
-TELEGRAM_MAX_MESSAGE_LENGTH = 4096
+# A constant for Telegram's max message length
+MAX_MESSAGE_LENGTH = 4096
 
 async def send_message(text: str, chat_id: str = TELEGRAM_CHAT_ID):
     """
-    Отправляет текстовое сообщение в Telegram.
-    Если текст превышает лимит, он автоматически разбивается на несколько сообщений.
+    Sends a message to a specified Telegram chat.
+    If the message is too long, it splits it into multiple parts.
     """
     if not text:
-        logging.warning("Попытка отправить пустое сообщение. Отправка отменена.")
+        logger.warning("Attempted to send an empty message. Aborting.")
         return
 
-    try:
-        bot = telegram.Bot(token=TELEGRAM_BOT_TOKEN)
-        
-        if len(text) <= TELEGRAM_MAX_MESSAGE_LENGTH:
-            logging.info(f"Отправка цельного сообщения в чат {chat_id}...")
+    bot = telegram.Bot(token=TELEGRAM_BOT_TOKEN)
+    
+    if len(text) <= MAX_MESSAGE_LENGTH:
+        # If the message is short enough, send it in one go
+        try:
+            logger.info(f"Sending message to chat_id: {chat_id}")
             await bot.send_message(
                 chat_id=chat_id,
                 text=text,
                 parse_mode='Markdown'
             )
-        else:
-            logging.info(f"Сообщение превышает лимит ({len(text)} символов). Разбиение на части...")
-            parts =
-            current_part = ""
-            # Разбиваем по строкам, чтобы не рвать Markdown-форматирование
-            lines = text.split('\n')
-            for line in lines:
-                if len(current_part) + len(line) + 1 > TELEGRAM_MAX_MESSAGE_LENGTH:
-                    parts.append(current_part)
-                    current_part = line
+            logger.info("Message sent successfully.")
+        except telegram.error.TelegramError as e:
+            logger.error(f"Failed to send message to {chat_id}: {e}")
+    else:
+        # If the message is too long, split it
+        logger.info(f"Message is too long ({len(text)} chars). Splitting into parts.")
+        parts = []
+        while len(text) > 0:
+            if len(text) > MAX_MESSAGE_LENGTH:
+                part = text[:MAX_MESSAGE_LENGTH]
+                # Find the last newline character to avoid cutting mid-sentence
+                last_newline = part.rfind('\n')
+                if last_newline != -1:
+                    parts.append(part[:last_newline])
+                    text = text[last_newline:]
                 else:
-                    if current_part:
-                        current_part += "\n" + line
-                    else:
-                        current_part = line
-            parts.append(current_part) # Добавляем последнюю часть
+                    # If no newline, just cut at the max length
+                    parts.append(part)
+                    text = text[MAX_MESSAGE_LENGTH:]
+            else:
+                parts.append(text)
+                break
+        
+        for i, part in enumerate(parts):
+            try:
+                logger.info(f"Sending part {i+1}/{len(parts)} to {chat_id}")
+                await bot.send_message(
+                    chat_id=chat_id,
+                    text=part,
+                    parse_mode='Markdown'
+                )
+            except telegram.error.TelegramError as e:
+                logger.error(f"Failed to send part {i+1} to {chat_id}: {e}")
 
-            logging.info(f"Сообщение разбито на {len(parts)} частей.")
-            for i, part in enumerate(parts):
-                part_header = f"Дайджест (часть {i + 1}/{len(parts)})\n\n"
-                # Проверяем, не превысит ли часть с заголовком лимит
-                if len(part_header) + len(part) > TELEGRAM_MAX_MESSAGE_LENGTH:
-                     await bot.send_message(
-                        chat_id=chat_id,
-                        text=part,
-                        parse_mode='Markdown'
-                    )
-                else:
-                    await bot.send_message(
-                        chat_id=chat_id,
-                        text=part_header + part,
-                        parse_mode='Markdown'
-                    )
-                
-                logging.info(f"Часть {i + 1} отправлена в чат {chat_id}.")
-
-        logging.info("Сообщение в Telegram отправлено успешно.")
-    except telegram.error.TelegramError as e:
-        logging.error(f"Ошибка отправки сообщения в Telegram: {e}")
-        raise # Передаем исключение наверх для обработки в main
-    except Exception as e:
-        logging.error(f"Непредвиденная ошибка при работе с Telegram: {e}")
-        raise # Передаем исключение наверх для обработки в main
+async def send_admin_notification(text: str):
+    """Sends a notification message to the admin."""
+    logger.info("Sending notification to admin.")
+    await send_message(text=text, chat_id=TELEGRAM_ADMIN_CHAT_ID)

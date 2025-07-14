@@ -1,7 +1,8 @@
 import os
 from dotenv import load_dotenv
 
-# Загружаем переменные из.env файла
+# Загружаем переменные из.env файла (для локального запуска)
+# В GitHub Actions переменные будут браться из Secrets
 load_dotenv()
 
 # Получаем переменные окружения
@@ -10,8 +11,9 @@ TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
 # Проверяем, что все переменные заданы
+# ИСПРАВЛЕНИЕ 1: Передаем список переменных в функцию all()
 if not all():
-    raise ValueError("Ошибка: Не заданы одна или несколько переменных окружения (GEMINI_API_KEY, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID)")
+    raise ValueError("Ошибка: Одна или несколько переменных окружения не заданы. Проверьте ваши GitHub Secrets (GEMINI_API_KEY, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID).")
 
-# Идентификатор модели Gemini
-MODEL_NAME = "gemini-1.5-flash-latest" # Используем более быструю и дешевую модель для дайджестов
+# ИСПРАВЛЕНИЕ 2: Возвращаем правильную модель, которую вы запрашивали
+MODEL_NAME = "gemini-2.5-pro"

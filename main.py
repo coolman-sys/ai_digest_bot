@@ -1,9 +1,9 @@
 import logging
 from datetime import datetime
 import pytz
+import traceback
 
-# --- ИСПРАВЛЕНИЕ: Возвращаем префикс 'src.' для корректной работы импортов ---
-# Это указывает Python, что модули находятся в директории 'src'.
+# Возвращаем префикс 'src.' для корректной работы импортов
 from src.gemini_client import configure_gemini, generate_digest
 from src.telegram_client import send_message, send_admin_notification
 from src.news_fetcher import fetch_news 
@@ -28,7 +28,7 @@ async def main():
         configure_gemini()
         
         # Используем настоящую функцию получения новостей
-        news_context = fetch_news(limit_per_feed=3) # Берем по 3 новости с каждого ресурса
+        news_context = fetch_news(limit_per_feed=3) 
         
         if "Новостей для анализа не найдено" in news_context:
             logger.warning("Не найдено новостей для обработки. Работа завершена.")
@@ -40,11 +40,16 @@ async def main():
         moscow_tz = pytz.timezone("Europe/Moscow")
         current_date = datetime.now(moscow_tz).strftime("%d.%m.%Y")
         
-        final_prompt = prompt_template.format(news_context=news_context, current_date=current_date)
+        # ИСПРАВЛЕНИЕ: Используем метод .format(), но только для тех плейсхолдеров, которые нам нужны.
+        # Двойные фигурные скобки {{...}} в промпте будут проигнорированы.
+        final_prompt = prompt_template.format(
+            news_context=news_context, 
+            current_date=current_date
+        )
         
         # Логирование финального промпта для отладки
         logger.info("--- Финальный промпт для Gemini ---")
-        logger.info(final_prompt)
+        logger.info(final_prompt[:1000] + "...") # Логируем только часть, чтобы не засорять
         logger.info("---------------------------------")
         
         digest_text, error_reason = await generate_digest(final_prompt)
@@ -62,10 +67,17 @@ async def main():
             await send_admin_notification(error_message_for_admin)
 
     except Exception as e:
+        # Улучшенное форматирование сообщения об ошибке для безопасной отправки
+        tb_str = traceback.format_exc()
         critical_error_message = (
             "🆘 **Полный отказ системы aidigest_bot** 🆘\n\n"
-            f"Произошла непредвиденная ошибка на самом верхнем уровне: {e}\n\n"
-            "Требуется немедленное вмешательство!"
+            "Произошла непредвиденная ошибка на самом верхнем уровне.\n\n"
+            "**Тип ошибки:**\n"
+            f"`{type(e).__name__}`\n\n"
+            "**Сообщение:**\n"
+            f"`{str(e)}`\n\n"
+            "**Traceback:**\n"
+            f"```\n{tb_str}\n```"
         )
         logger.critical(f"В процессе работы бота произошла критическая ошибка: {e}", exc_info=True)
         try:

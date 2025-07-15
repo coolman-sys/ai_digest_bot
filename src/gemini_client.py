@@ -1,4 +1,5 @@
 import logging
+import asyncio # <--- 1. Импортируем asyncio
 import google.generativeai as genai
 from google.api_core import exceptions
 
@@ -17,9 +18,10 @@ def configure_gemini():
         logger.error(f"Не удалось сконфигурировать Gemini: {e}")
         raise
 
-def generate_digest(prompt_text: str) -> tuple[str | None, str | None]:
+# v--- 2. Меняем 'def' на 'async def'
+async def generate_digest(prompt_text: str) -> tuple[str | None, str | None]:
     """
-    Генерирует дайджест с помощью модели Gemini.
+    Асинхронно генерирует дайджест с помощью модели Gemini.
 
     Возвращает кортеж (текст_дайджеста, причина_ошибки).
     В случае успеха причина_ошибки будет None.
@@ -28,24 +30,22 @@ def generate_digest(prompt_text: str) -> tuple[str | None, str | None]:
         logger.info(f"Запрос к модели {MODEL_NAME}...")
         model = genai.GenerativeModel(MODEL_NAME)
         
-        # Устанавливаем настройки безопасности, чтобы получать больше информации
         generation_config = genai.types.GenerationConfig(
             candidate_count=1,
-            temperature=0.7, # Немного креативности
+            temperature=0.7,
         )
         
-        response = model.generate_content(
+        # 3. Запускаем блокирующую функцию в отдельном потоке
+        response = await asyncio.to_thread(
+            model.generate_content,
             prompt_text,
-            generation_config=generation_config,
+            generation_config=generation_config
         )
         
         logger.info("Ответ от Gemini получен.")
 
-        # Проверяем, есть ли текст в ответе
         if response.text:
             return response.text, None
-        
-        # Если текста нет, ищем причину в prompt_feedback
         else:
             block_reason = "Причина неизвестна"
             if response.prompt_feedback:

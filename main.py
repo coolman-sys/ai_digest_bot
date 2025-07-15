@@ -2,11 +2,11 @@ import logging
 from datetime import datetime
 import pytz
 
-# Убираем 'src.' для более надежного импорта
-from gemini_client import configure_gemini, generate_digest
-from telegram_client import send_message, send_admin_notification
-# Теперь мы ИСПОЛЬЗУЕМ эту функцию
-from news_fetcher import fetch_news 
+# --- ИСПРАВЛЕНИЕ: Возвращаем префикс 'src.' для корректной работы импортов ---
+# Это указывает Python, что модули находятся в директории 'src'.
+from src.gemini_client import configure_gemini, generate_digest
+from src.telegram_client import send_message, send_admin_notification
+from src.news_fetcher import fetch_news 
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -27,8 +27,7 @@ async def main():
     try:
         configure_gemini()
         
-        # --- ИСПРАВЛЕНИЕ №1: Используем настоящую функцию получения новостей ---
-        # Удаляем вызов заглушки и вызываем fetch_news
+        # Используем настоящую функцию получения новостей
         news_context = fetch_news(limit_per_feed=3) # Берем по 3 новости с каждого ресурса
         
         if "Новостей для анализа не найдено" in news_context:
